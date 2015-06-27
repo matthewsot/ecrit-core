@@ -22,7 +22,6 @@ ecrit.Document.prototype._detectConflicts = function (transformation) {
 };
 
 ecrit.Document.prototype._applyTransformation = function (transformation) {
-
 };
 
 /** 
