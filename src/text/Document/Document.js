@@ -5,10 +5,12 @@
 ecrit.Document = function () {
     this.document = this;
     
-    Node.call(this, this, "root", []);
+    ecrit.Node.call(this, this, "root", []);
     
     this.history = [];
 };
+
+ecrit.Document.prototype = Object.create(ecrit.Node.prototype);
 
 ecrit.Document.prototype._detectConflicts = function (transformation) {
     var conflicts = [];
@@ -25,7 +27,7 @@ ecrit.Document.prototype._detectConflicts = function (transformation) {
 };
 
 ecrit.Document.prototype._applyTransformation = function (transformation) {
-    var node = ecrit.Document.prototype.getNodeById(transformation.affectsId);
+    var node = this.getNodeById(transformation.affectsId);
 
     switch (transformation.action) {
         case "insertText":
