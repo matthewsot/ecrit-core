@@ -64,6 +64,42 @@ Upon receiving transformation T, each client C should:
 2. Undo all transformations with the same affectsId with a timestamp later than T.timestamp and store the undone transformations in a new array U.
 3. Pull all transformations with timestamps between R.timestamp and T.timestamp (not including R) that have the same affectsId as T into a new array E.
 4. Create an integer D = 0. Loop through the transforms in E chronologically as TE. For each TE that removes characters before the T.insertAt, D -= (TE.to - TE.from). **What if it removes the insertion point?** For each TE that adds characters before the T.insertAt, D+= TE.contents.length.
-5. (for insertions): T.insertAt += D (for removals): T.removeAt += D
+5. Save T's initial insertion index. (for insertions): T.insertAt += D (for removals): T.removeAt += D
 6. Apply transformation T with the new insertion point
-7. Loop through each TU in U. If TU's insertion index is after T's insertion index, TU's insertion index += D. Reapply TU.
+7. Loop through each TU in U. If TU's insertion index is after T's initial insertion index, TU's insertion index += D. Reapply TU.
+
+In pseudocode, we might get:
+
+```
+applyTransformation(T) {
+    var reference = history.getTransformationWithTimestamp(T.lastAppliedStamp);
+    if (reference === null) {
+        deferred.push(T);
+        return;
+    }
+
+    var U = history.getTransformationsWithAffectsAfter(T.affectsId, T.timestamp);
+    for (var toUndo in U) {
+        toUndo.undo();
+    }
+
+    var E = history.getTransformationsWithAffectsBetween(T.affectsId, T.lastAppliedStamp, T.timestamp);
+    var D = 0;
+    for (var toCheck in E) {
+        if (toCheck.insertIndex < T.insertIndex) {
+            D += toCheck.removing ? (-1 * toCheck.length) : toCheck.length;
+        }
+    }
+    var initialIndex = T.insertIndex;
+    T.insertIndex += D;
+
+    document.applyTransformation(T);
+
+    for (var toApply in U) {
+        if (toApply.insertIndex > initialIndex) {
+            toApply.insertIndex += D;
+            document.applyTransformation(toApply);
+        }
+    }
+}
+```
