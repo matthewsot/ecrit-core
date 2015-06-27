@@ -32,12 +32,14 @@ ecrit.Document.prototype._applyTransformation = function (transformation) {
 ecrit.Document.prototype.applyTransformation = function (transformation) {
     var conflicts = this._detectConflicts(transformation);
 
-    for (var i = 0; i < conflicts.length; i++) {
+    // Undo the conflicts in LIFO order (last applied -> undone first)
+    for (var i = (conflicts.length - 1); i >= 0; i--) {
         this._applyTransformation(conflicts[i].reversed());
     }
 
     this._applyTransformation(transformation);
 
+    // Reapply the conflicts in LOFI order (last undone -> last reapplied)
     for (var i = 0; i < conflicts.length; i++) {
         this._applyTransformation(conflicts[i]);
     }
