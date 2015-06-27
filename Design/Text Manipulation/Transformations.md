@@ -67,7 +67,12 @@ The removeNode action removes the specified node from its parent.
 {
     "affectsId": "...",
     "timestamp": 000,
-    "action": "removeNode"
+    "action": "removeNode",
+    "node": {
+        "contents": "text to remove",
+        "id": "4"
+    },
+    "afterId": 2
 }
 ```
 
