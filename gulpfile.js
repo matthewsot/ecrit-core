@@ -23,7 +23,17 @@ gulp.task('test', function () {
     var sandbox = {};
     vm.runInNewContext(code, sandbox);
     
-    var m = new sandbox.ecrit.Document();
-    assert(m.id === "root", "Doc ID check");
-    assert(m.getNodeById("root").id === "root", "getNodeById");
+    var doc = new sandbox.ecrit.Document();
+    assert(doc.id === "root", "Doc ID check");
+    assert(doc.getNodeById("root").id === "root", "getNodeById");
+
+    var para = new sandbox.ecrit.Paragraph(doc, "p-id-1");
+    doc.applyTransformation({
+        "affectsId": "root",
+        "timestamp": (new Date()).getTime(),
+        "action": "insertNode",
+        "node": para
+    });
+    assert(doc.children.length === 1, "Doc child length");
+    assert(doc.getNodeById("p-id-1") === para, "getNodeById");
 });

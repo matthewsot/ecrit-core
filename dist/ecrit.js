@@ -12,7 +12,9 @@ ecrit.Node = function (parent, id, nodes) {
  * @params id {string} - The id of the node to find, "root" for the Document.
  * @returns {object} - The node found, or null if there was no node found.
  */
-ecrit.Node.prototype.getNodeById = function (id) {
+ecrit.Node.prototype.getNodeById = function (id, recursive) {
+    recursive = (typeof recursive === "boolean") ? recursive : true;
+    
     if (id === this.id) {
         return this;
     }
@@ -21,7 +23,9 @@ ecrit.Node.prototype.getNodeById = function (id) {
         if (this.children[i].id === id) {
             return this.children[i];
         }
-        
+
+        if (!recursive) continue;
+
         var node = this.children[i].getNodeById(id);
         if (node !== null) { 
             return node;
@@ -39,6 +43,7 @@ ecrit.Node.prototype.getNodeById = function (id) {
 ecrit.Node.prototype.on = function (event, listener) {
     this.listeners.push({ "event": event, "listener": listener });
 };
+
 /**
  * Unsubscribes once from an event
  * @param {string} event - The event to unsubscribe from.
@@ -53,6 +58,7 @@ ecrit.Node.prototype.off = function (event, listener) {
         }
     }
 };
+
 ecrit.Node.prototype._emit = function (event, data) {
     for (var i = 0; i < this.listeners.length; i++) {
         var found = this.listeners[i];
@@ -60,6 +66,54 @@ ecrit.Node.prototype._emit = function (event, data) {
             this.listeners[i].listener(data);
         }
     }
+};
+
+/**
+ * Inserts the node at the specified position.
+ * @param {Node} node - The node to insert
+ * @param {string} afterId - The ID of the node to insert after
+ * @param {string} beforeId - The ID of the node to insert before
+ */
+ecrit.Node.prototype.insertNode = function (node, afterId, beforeId) {
+    function emitIt() {
+        this._emit("nodeInserted", { node: node, index: this.children.indexOf(node) });
+    };
+    
+    if (typeof afterId === "string") {
+        var insertAfter = this.getNodeById(afterId, false);
+        if (insertAfter !== null) {
+            var insertAt = this.children.indexOf(insertAfter) + 1;
+            this.children.splice(insertAt, 0, node);
+        }
+        emitIt.call(this);
+        return;
+    }
+
+    if (typeof beforeId === "string") {
+        var insertBefore = this.getNodeById(beforeId, false);
+        if (insertBefore !== null) {
+            var insertAt = this.children.indexOf(insertBefore);
+            this.children.splice(insertAt, 0, node);
+        }
+        emitIt.call(this);
+        return;
+    }
+
+    this.children.push(node);
+    emitIt.call(this);
+};
+
+/**
+ * Removes the node from its parent.
+ */
+ecrit.Node.prototype.remove = function () {
+    if (this.parent === this) return;
+
+    var index = this.parent.children.indexOf(this);
+    this.parent.children.splice(index, 1);
+
+    this.parent._emit("childRemoved", this);
+    this._emit("removed");
 };
 /**
  * Represents an ecrit Document.
