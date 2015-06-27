@@ -1,4 +1,3 @@
-ecrit.Paragraph = function (id, nodes) {
-    this.id = id;
-    this.nodes = nodes || [];
+ecrit.Paragraph = function (parent, id, nodes) {
+    Node.call(this, parent, id, nodes);
 };

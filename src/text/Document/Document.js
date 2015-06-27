@@ -3,61 +3,11 @@
  * @constructor
  */
 ecrit.Document = function () {
-    //this.allNodes = {};
-    this.children = [];
-    this.history = [];
-    this.listeners = [];
-};
-
-/**
- * Subscribes to an event
- * @param {string} event - The event to subscribe to.
- * @param {string} listener - The listener to call when that event is fired
- */
-ecrit.Document.prototype.on = function (event, listener) {
-    this.listeners.push({ "event": event, "listener": listener });
-};
-/**
- * Unsubscribes once from an event
- * @param {string} event - The event to unsubscribe from.
- * @param {string} listener - The listener to unsubscribe.
- */
-ecrit.Document.prototype.off = function (event, listener) {
-    for (var i = 0; i < this.listeners.length; i++) {
-        var found = this.listeners[i];
-        if (found.event === event && found.listener == listener) {
-            this.listeners.splice(i, 1);
-            return;
-        }
-    }
-};
-ecrit.Document.prototype._emit = function (event, data) {
-    for (var i = 0; i < this.listeners.length; i++) {
-        var found = this.listeners[i];
-        if (found.event === event) {
-            this.listeners[i].listener(data);
-        }
-    }
-};
-
-/**
- * Returns a node in the document by its id.
- * @params id {string} - The id of the node to find, "root" for the Document.
- * @returns {object} - The node found, or null if there was no node found.
- */
-ecrit.Document.prototype.getNodeById = function (id) {
-    if (id === "root") {
-        return this;
-    }
+    this.document = this;
     
-    for (var i = 0; i < this.children.length; i++) {
-        var node = this.children[i].getNodeById(id);
-        if (node !== null) { 
-            return node;
-        }
-    }
-
-    return null;
+    Node.call(this, this, "root", []);
+    
+    this.history = [];
 };
 
 ecrit.Document.prototype._detectConflicts = function (transformation) {
