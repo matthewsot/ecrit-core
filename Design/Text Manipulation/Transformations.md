@@ -14,6 +14,7 @@ A basic transformation object requires two properties:
 * timestamp is a Unix timestamp as returned by the Javascript ``(new Date()).getTime()``.
 
 ## Actions:
+All actions must be reversible.
 
 ### insertText
 The insertText action inserts text into a specified TextSpan. Use "atIndex" to specify where to start the text insertion.
@@ -30,13 +31,16 @@ The insertText action inserts text into a specified TextSpan. Use "atIndex" to s
 ### removeText
 The removeText action removes text from a TextSpan. Use "fromIndex" and "toIndex" to specify the text to remove.
 
+Note that fromIndex denotes the index of the first character removed and toIndex is the index of the last character removed, so to remove only the first character both to and from indexes would be 0.
+
 ```
 {
     "affectsId": "...",
     "timestamp": 000,
     "action": "removeText",
     "fromIndex": 0,
-    "toIndex": 15
+    "toIndex": 17,
+    "contents": "text being removed"
 }
 ```
 
@@ -64,18 +68,6 @@ The removeNode action removes the specified node from its parent.
     "affectsId": "...",
     "timestamp": 000,
     "action": "removeNode"
-}
-```
-
-## formatNode
-The formatNode action sets a node's format property, overriding any previous formats.
-
-```
-{
-    "affectsId": "...",
-    "timestamp": 000,
-    "action": "formatNode",
-    "format": [ "bold", "italic" ]
 }
 ```
 
