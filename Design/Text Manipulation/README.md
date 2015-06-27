@@ -50,12 +50,14 @@ If the user were to highglight "important text" and un-bold it, the following tr
 [
     {
         "affectsId": "2",
+        "timestamp": 000,
         "action": "removeText",
         "fromIndex": 5,
         "toIndex": 19
     },
     {
         "affectsId": "0",
+        "timestamp": 000,
         "action": "insertNode",
         "node": {
             "contents": "important text",
