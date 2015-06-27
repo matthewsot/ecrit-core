@@ -1,3 +1,8 @@
+/**
+ * Represents a transformation to a Document.
+ * @constructor
+ * @param {object} data - The transformation data to apply.
+ */
 ecrit.Transformation = function (data) {
     for (var prop in data) {
         if (data.hasOwnProperty(prop)) {
@@ -6,6 +11,10 @@ ecrit.Transformation = function (data) {
     }
 };
 
+/**
+ * Reverses a transformation. The reversed transformation can be applied as an undo transformation.
+ * @returns {Transformation} - The reversed transformation
+ */
 ecrit.Transformation.prototype.reversed = function () {
     var reversed = new Transformation(this);
     
