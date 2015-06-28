@@ -34,8 +34,6 @@ var Line = function (text) {
     
     this.history._push = this.history.push;
     this.history.push = function (element) {
-        if (this.indexOf(element) !== -1) return; //TODO: figure out why this is happening
-
         this._push(element);
         this.sort(function (a, b) {
             return a.timestamp - b.timestamp;
@@ -88,7 +86,7 @@ Line.prototype.applyTransformation = function (transformation, verbose, clone) {
 
     var U = this.history.afterTimestamp(transformation.timestamp);
     for (var i = (U.length - 1); i >= 0; i--) {
-        this.history.splice(i, 1);
+        this.history.splice(this.history.indexOf(U[i]), 1);
         this._undo(U[i]);
     }
 
