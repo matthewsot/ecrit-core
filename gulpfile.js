@@ -76,29 +76,32 @@ gulp.task('simple-test', function () {
         lastApplied: 0
     };
 
-    C.applyTransformation(CTransform);
-    assert(C.text === "xaaayz123", "C1");
-
+// A tests
     A.applyTransformation(ATransform);
     assert(A.text === "abcxyz123", "A1");
-
-    B.applyTransformation(CTransform);
-    assert(B.text === "xaaayz123", "BC1");
-
-    B.applyTransformation(BTransform);
-    assert(B.text === "xaaayzhello123", "B1");
-
-    C.applyTransformation(BTransform);
-    assert(C.text === "xaaayzhello123", "C2");
-
-    B.applyTransformation(ATransform);
-    assert(B.text === "abcxaaayzhello123", "BA1");
 
     A.applyTransformation(BTransform);
     assert(A.text === "abcxyz123", "AB1");
 
     A.applyTransformation(CTransform);
     assert(A.text === "abcxaaayzhello123", "AC1");
+
+// B tests
+    B.applyTransformation(CTransform);
+    assert(B.text === "xaaayz123", "BC1");
+
+    B.applyTransformation(BTransform);
+    assert(B.text === "xaaayzhello123", "B1");
+
+    B.applyTransformation(ATransform);
+    assert(B.text === "abcxaaayzhello123", "BA1");
+
+// C tests
+    C.applyTransformation(CTransform);
+    assert(C.text === "xaaayz123", "C1");
+
+    C.applyTransformation(BTransform);
+    assert(C.text === "xaaayzhello123", "C2");
 
     C.applyTransformation(ATransform);
     assert(C.text === "abcxaaayzhello123", "C1");
