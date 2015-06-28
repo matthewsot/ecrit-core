@@ -67,6 +67,8 @@ Upon receiving transformation T, each client C should:
 5. Save T's initial insertion index. (for insertions): T.insertAt += D (for removals): T.removeAt += D
 6. Apply transformation T with the new insertion point
 7. Loop through each TU in U. If TU's insertion index is after T's initial insertion index, TU's insertion index += D. Reapply TU.
+8. Add T to history
+9. Check for any previously deferred transformations that should now be applied
 
 In pseudocode, we might get:
 
@@ -79,7 +81,7 @@ applyTransformation(T) {
     }
 
     var U = history.getTransformationsWithAffectsAfter(T.affectsId, T.timestamp);
-    for (var toUndo in U) {
+    for (var toUndo in U.reverse()) {
         toUndo.undo();
     }
 
@@ -99,6 +101,12 @@ applyTransformation(T) {
         if (toApply.insertIndex > initialIndex) {
             toApply.insertIndex += D;
             document.applyTransformation(toApply);
+        }
+    }
+    
+    for (var deferredT in deferred) {
+        if (deferredT.lastAppliedStamp === T.timestamp) {
+            applyTransformation(deferredT);
         }
     }
 }
