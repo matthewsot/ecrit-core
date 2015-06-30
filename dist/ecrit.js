@@ -1,10 +1,53 @@
 var ecrit = {};
+ecrit.NodeHistory = function () {
+	this._push = this.push;
+	this.push = function (element) {
+	    this._push(element);
+	    this.sort(function (a, b) {
+	        return a.timestamp - b.timestamp;
+	    });
+	};
+};
+
+ecrit.NodeHistory.prototype = Object.create(Array.prototype);
+
+ecrit.NodeHistory.prototype.withTimestamp = function (stamp) {
+    for (var i = 0; i < this.length; i++) {
+        if (this[i].timestamp === stamp) {
+            return this[i];
+        }
+    }
+    return null;
+};
+
+ecrit.NodeHistory.prototype.afterTimestamp = function (stamp) {
+    var ret = [];
+    for (var i = 0; i < this.length; i++) {
+        if (this[i].timestamp > stamp) {
+            ret.push(this[i]);
+        }
+    }
+    return ret;
+};
+
+ecrit.NodeHistory.prototype.betweenTimestamps = function (afterStamp, beforeStamp) {
+    var ret = [];
+    for (var i = 0; i < this.length; i++) {
+        if (this[i].timestamp > afterStamp && this[i].timestamp < beforeStamp) {
+            ret.push(this[i]);
+        }
+    }
+    return ret;
+};
 ecrit.Node = function (parent, id, nodes) {
     this.parent = parent;
     this.id = id;
     this.document = parent.document;
     this.children = nodes || [];
     this.listeners = [];
+    
+    this.deferred = [];
+    this.history = new ecrit.NodeHistory();
 };
 
 /**
@@ -12,7 +55,7 @@ ecrit.Node = function (parent, id, nodes) {
  * @params id {string} - The id of the node to find, "root" for the Document.
  * @returns {object} - The node found, or null if there was no node found.
  */
-ecrit.Node.prototype.getNodeById = function (id, recursive) {
+ecrit.Node.prototype.getChildNodeById = function (id, recursive) {
     recursive = (typeof recursive === "boolean") ? recursive : true;
     
     if (id === this.id) {
@@ -26,7 +69,7 @@ ecrit.Node.prototype.getNodeById = function (id, recursive) {
 
         if (!recursive) continue;
 
-        var node = this.children[i].getNodeById(id);
+        var node = this.children[i].getChildNodeById(id);
         if (node !== null) { 
             return node;
         }
@@ -71,8 +114,8 @@ ecrit.Node.prototype._emit = function (event, data) {
 /**
  * Inserts the node at the specified position.
  * @param {Node} node - The node to insert
- * @param {string} afterId - The ID of the node to insert after
  * @param {string} beforeId - The ID of the node to insert before
+ * @param {string} afterId - The ID of the node to insert after
  */
 ecrit.Node.prototype.insertNode = function (node, afterId, beforeId) {
     function emitIt() {
@@ -80,9 +123,8 @@ ecrit.Node.prototype.insertNode = function (node, afterId, beforeId) {
     };
     
     if (typeof afterId === "string") {
-        var insertAfter = this.getNodeById(afterId, false);
-        if (insertAfter !== null) {
-            var insertAt = this.children.indexOf(insertAfter) + 1;
+        var insertAt = this.children.indexOf(this.getChildNodeById(afterId)) + 1;
+        if (insertAt !== -1) {
             this.children.splice(insertAt, 0, node);
         }
         emitIt.call(this);
@@ -90,9 +132,8 @@ ecrit.Node.prototype.insertNode = function (node, afterId, beforeId) {
     }
 
     if (typeof beforeId === "string") {
-        var insertBefore = this.getNodeById(beforeId, false);
-        if (insertBefore !== null) {
-            var insertAt = this.children.indexOf(insertBefore);
+        var insertAt = this.children.indexOf(this.getChildNodeById(beforeId));
+        if (insertAt !== -1) {
             this.children.splice(insertAt, 0, node);
         }
         emitIt.call(this);
@@ -104,16 +145,17 @@ ecrit.Node.prototype.insertNode = function (node, afterId, beforeId) {
 };
 
 /**
- * Removes the node from its parent.
+ * Removes the specified child node.
+ * @param {Node} node - The node to remove
  */
-ecrit.Node.prototype.remove = function () {
-    if (this.parent === this) return;
+ecrit.Node.prototype.removeNode = function (node) {
+    var foundNode = this.getChildNodebyId(node.id, false);
+    if (foundNode === null || foundNode === this) return;
 
-    var index = this.parent.children.indexOf(this);
-    this.parent.children.splice(index, 1);
+    var index = this.children.indexOf(foundNode);
+    this.children.splice(index, 1);
 
-    this.parent._emit("childRemoved", this);
-    this._emit("removed");
+    this._emit("childRemoved", foundNode);
 };
 /**
  * Represents an ecrit Document.
@@ -121,13 +163,13 @@ ecrit.Node.prototype.remove = function () {
  */
 ecrit.Document = function () {
     this.document = this;
+    this.id = "root";
     
     ecrit.Node.call(this, this, "root", []);
-    
-    this.history = [];
 };
 
 ecrit.Document.prototype = Object.create(ecrit.Node.prototype);
+ecrit.Document.prototype.constructor = ecrit.Document;
 
 ecrit.Document.prototype._detectConflicts = function (transformation) {
     var conflicts = [];
@@ -144,51 +186,71 @@ ecrit.Document.prototype._detectConflicts = function (transformation) {
 };
 
 ecrit.Document.prototype._applyTransformation = function (transformation) {
-    var node = this.getNodeById(transformation.affectsId);
-
     switch (transformation.action) {
-        case "insertText":
-            node.insertText(transformation.atIndex, transformation.contents);
-            break;
-        case "removeText":
-            node.removeText(transformation.fromIndex, transformation.toIndex);
-            break;
-
         case "insertNode":
-            node.insertNode(transformation.node, transformation.afterId, transformation.beforeId);
-            break;
+            this.insertNode(transformation.node, transformation.afterId, transformation.beforeId);
+            return;
         case "removeNode":
-            node.remove();
-            break;
-
-        case "modifyFormatting":
-            node.modifyFormatting(transformation.add, transformation.remove);
-            break;
+            this.removeNode(transformation.node);
+            return;
     }
-
-    this._emit("transformationApplied", { transformation: transformation });
 };
 
 /** 
  * Applies a transformation, deals with conflicting transformations, and adds the transformation to the history.
  * @param {Transformation} transformation - The transformation to apply
  */
-ecrit.Document.prototype.applyTransformation = function (transformation) {
-    var conflicts = this._detectConflicts(transformation);
-
-    // Undo the conflicts in LIFO order (last applied -> undone first)
-    for (var i = (conflicts.length - 1); i >= 0; i--) {
-        this._applyTransformation(conflicts[i].reversed());
+ecrit.Document.prototype.applyTransformation = function (transformation, clone) {
+    if (clone !== false) {
+        /*var targetNode = transformation.targetNode; //prevents a circular dependency
+        
+        transformation.targetNode = {};
+        var clonedTransformation = JSON.parse(JSON.stringify(transformation));
+        clonedTransformation.targetNode = targetNode;
+        transformation.targetNode = targetNode;*/
     }
+
+    var reference = this.history.withTimestamp(transformation.lastApplied);
+    if (transformation.lastApplied !== -1 && reference === null) {
+        this.deferred.push(transformation);
+        return;
+    }
+
+    var U = this.history.afterTimestamp(transformation.timestamp);
+    for (var i = (U.length - 1); i >= 0; i--) {
+        this.history.splice(this.history.indexOf(U[i]), 1);
+        this._undo(U[i]);
+    }
+
+    var E = this.history.betweenTimestamps(transformation.lastApplied, transformation.timestamp);
+    var D = 0;
+    for (var i = 0; i < E.length; i++) {
+        var toCheck = E[i];
+        //TODO: handle this?
+    }
+    /*var initialIndex = transformation.index;
+    transformation.index += D;*/
 
     this._applyTransformation(transformation);
 
-    // Reapply the conflicts in LOFI order (last undone -> last reapplied)
-    for (var i = 0; i < conflicts.length; i++) {
-        this._applyTransformation(conflicts[i]);
-    }
-
     this.history.push(transformation);
+
+    for (var i = 0; i < U.length; i++) {
+        var toApply = U[i];
+        /*if (toApply.index > initialIndex) {
+            toApply.index += D + transformation.text.length;
+        }*/
+        this._applyTransformation(toApply);
+        this.history.push(toApply);
+    }
+    
+    for (var i = 0; i < this.deferred.length; i++) {
+        if (this.deferred[i].lastApplied === transformation.timestamp) {
+            this.applyTransformation(this.deferred[i]);
+            this.deferred.splice(i, 1);
+            i--;
+        }
+    }
 };
 /**
  * Represents a transformation to a Document.
@@ -244,6 +306,78 @@ ecrit.Paragraph = function (parent, id, nodes) {
 ecrit.Paragraph.prototype = Object.create(ecrit.Node.prototype);
 ecrit.TextSpan = function (id, options) {
     this.id = id;
-    this.contents = options.contents || "";
+    this.text = options.text || "";
     this.formatting = options.formatting || [];
+};
+
+ecrit.TextSpan.prototype = Object.create(ecrit.Node.prototype);
+ecrit.TextSpan.prototype.constructor = ecrit.TextSpan;
+
+ecrit.TextSpan.prototype._applyTransformation = function (transformation) {
+    switch (transformation.action) {
+        case "removeText":
+            var newStr = this.text.substring(0, transformation.index);
+            newStr += this.text.substring((transformation.index + transformation.text.length));
+            this.text = newStr;
+            return;
+        case "insertText":
+            this.text = this.text.slice(0, transformation.index) + transformation.text + this.text.slice(transformation.index);
+            return;
+    }
+};
+
+ecrit.TextSpan.prototype._undo = function (transformation) {
+    transformation.action = transformation.action === "insertText" ? "removeText" : "insertText";
+    this._applyTransformation(transformation);
+    transformation.action = transformation.action === "insertText" ? "removeText" : "insertText";
+};
+
+ecrit.TextSpan.prototype.applyTransformation = function (transformation, clone) {
+    if (clone !== false) {
+        transformation = JSON.parse(JSON.stringify(transformation));
+    }
+
+    var reference = this.history.withTimestamp(transformation.lastApplied);
+    if (transformation.lastApplied !== -1 && reference === null) {
+        this.deferred.push(transformation);
+        return;
+    }
+
+    var U = this.history.afterTimestamp(transformation.timestamp);
+    for (var i = (U.length - 1); i >= 0; i--) {
+        this.history.splice(this.history.indexOf(U[i]), 1);
+        this._undo(U[i]);
+    }
+
+    var E = this.history.betweenTimestamps(transformation.lastApplied, transformation.timestamp);
+    var D = 0;
+    for (var i = 0; i < E.length; i++) {
+        var toCheck = E[i];
+        if (toCheck.index < transformation.index) {
+            D += toCheck.remove ? (-1 * toCheck.text.length) : toCheck.text.length;
+        }
+    }
+    var initialIndex = transformation.index;
+    transformation.index += D;
+
+    this._applyTransformation(transformation);
+
+    this.history.push(transformation);
+
+    for (var i = 0; i < U.length; i++) {
+        var toApply = U[i];
+        if (toApply.index > initialIndex) {
+            toApply.index += D + transformation.text.length;
+        }
+        this._applyTransformation(toApply);
+        this.history.push(toApply);
+    }
+    
+    for (var i = 0; i < this.deferred.length; i++) {
+        if (this.deferred[i].lastApplied === transformation.timestamp) {
+            this.applyTransformation(this.deferred[i]);
+            this.deferred.splice(i, 1);
+            i--;
+        }
+    }
 };

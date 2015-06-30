@@ -1,44 +1,7 @@
 var Line = function (text) {
     this.text = "";
     this.deferred = [];
-    this.history = [];
-
-    this.history.withTimestamp = function (stamp) {
-        for (var i = 0; i < this.length; i++) {
-            if (this[i].timestamp === stamp) {
-                return this[i];
-            }
-        }
-        return null;
-    };
-
-    this.history.afterTimestamp = function (stamp) {
-        var ret = [];
-        for (var i = 0; i < this.length; i++) {
-            if (this[i].timestamp > stamp) {
-                ret.push(this[i]);
-            }
-        }
-        return ret;
-    };
-
-    this.history.betweenTimestamps = function (afterStamp, beforeStamp) {
-        var ret = [];
-        for (var i = 0; i < this.length; i++) {
-            if (this[i].timestamp > afterStamp && this[i].timestamp < beforeStamp) {
-                ret.push(this[i]);
-            }
-        }
-        return ret;
-    };
-    
-    this.history._push = this.history.push;
-    this.history.push = function (element) {
-        this._push(element);
-        this.sort(function (a, b) {
-            return a.timestamp - b.timestamp;
-        });
-    };
+    this.history = new ecrit.NodeHistory();
 
     this._applyTransformation({
         remove: false,

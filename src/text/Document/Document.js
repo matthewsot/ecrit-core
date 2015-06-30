@@ -4,13 +4,13 @@
  */
 ecrit.Document = function () {
     this.document = this;
+    this.id = "root";
     
     ecrit.Node.call(this, this, "root", []);
-    
-    this.history = [];
 };
 
 ecrit.Document.prototype = Object.create(ecrit.Node.prototype);
+ecrit.Document.prototype.constructor = ecrit.Document;
 
 ecrit.Document.prototype._detectConflicts = function (transformation) {
     var conflicts = [];
@@ -27,49 +27,69 @@ ecrit.Document.prototype._detectConflicts = function (transformation) {
 };
 
 ecrit.Document.prototype._applyTransformation = function (transformation) {
-    var node = this.getNodeById(transformation.affectsId);
-
     switch (transformation.action) {
-        case "insertText":
-            node.insertText(transformation.atIndex, transformation.contents);
-            break;
-        case "removeText":
-            node.removeText(transformation.fromIndex, transformation.toIndex);
-            break;
-
         case "insertNode":
-            node.insertNode(transformation.node, transformation.afterId, transformation.beforeId);
-            break;
+            this.insertNode(transformation.node, transformation.afterId, transformation.beforeId);
+            return;
         case "removeNode":
-            node.remove();
-            break;
-
-        case "modifyFormatting":
-            node.modifyFormatting(transformation.add, transformation.remove);
-            break;
+            this.removeNode(transformation.node);
+            return;
     }
-
-    this._emit("transformationApplied", { transformation: transformation });
 };
 
 /** 
  * Applies a transformation, deals with conflicting transformations, and adds the transformation to the history.
  * @param {Transformation} transformation - The transformation to apply
  */
-ecrit.Document.prototype.applyTransformation = function (transformation) {
-    var conflicts = this._detectConflicts(transformation);
-
-    // Undo the conflicts in LIFO order (last applied -> undone first)
-    for (var i = (conflicts.length - 1); i >= 0; i--) {
-        this._applyTransformation(conflicts[i].reversed());
+ecrit.Document.prototype.applyTransformation = function (transformation, clone) {
+    if (clone !== false) {
+        /*var targetNode = transformation.targetNode; //prevents a circular dependency
+        
+        transformation.targetNode = {};
+        var clonedTransformation = JSON.parse(JSON.stringify(transformation));
+        clonedTransformation.targetNode = targetNode;
+        transformation.targetNode = targetNode;*/
     }
+
+    var reference = this.history.withTimestamp(transformation.lastApplied);
+    if (transformation.lastApplied !== -1 && reference === null) {
+        this.deferred.push(transformation);
+        return;
+    }
+
+    var U = this.history.afterTimestamp(transformation.timestamp);
+    for (var i = (U.length - 1); i >= 0; i--) {
+        this.history.splice(this.history.indexOf(U[i]), 1);
+        this._undo(U[i]);
+    }
+
+    var E = this.history.betweenTimestamps(transformation.lastApplied, transformation.timestamp);
+    var D = 0;
+    for (var i = 0; i < E.length; i++) {
+        var toCheck = E[i];
+        //TODO: handle this?
+    }
+    /*var initialIndex = transformation.index;
+    transformation.index += D;*/
 
     this._applyTransformation(transformation);
 
-    // Reapply the conflicts in LOFI order (last undone -> last reapplied)
-    for (var i = 0; i < conflicts.length; i++) {
-        this._applyTransformation(conflicts[i]);
-    }
-
     this.history.push(transformation);
+
+    for (var i = 0; i < U.length; i++) {
+        var toApply = U[i];
+        /*if (toApply.index > initialIndex) {
+            toApply.index += D + transformation.text.length;
+        }*/
+        this._applyTransformation(toApply);
+        this.history.push(toApply);
+    }
+    
+    for (var i = 0; i < this.deferred.length; i++) {
+        if (this.deferred[i].lastApplied === transformation.timestamp) {
+            this.applyTransformation(this.deferred[i]);
+            this.deferred.splice(i, 1);
+            i--;
+        }
+    }
 };

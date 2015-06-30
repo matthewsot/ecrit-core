@@ -4,6 +4,9 @@ ecrit.Node = function (parent, id, nodes) {
     this.document = parent.document;
     this.children = nodes || [];
     this.listeners = [];
+    
+    this.deferred = [];
+    this.history = new ecrit.NodeHistory();
 };
 
 /**
@@ -11,7 +14,7 @@ ecrit.Node = function (parent, id, nodes) {
  * @params id {string} - The id of the node to find, "root" for the Document.
  * @returns {object} - The node found, or null if there was no node found.
  */
-ecrit.Node.prototype.getNodeById = function (id, recursive) {
+ecrit.Node.prototype.getChildNodeById = function (id, recursive) {
     recursive = (typeof recursive === "boolean") ? recursive : true;
     
     if (id === this.id) {
@@ -25,7 +28,7 @@ ecrit.Node.prototype.getNodeById = function (id, recursive) {
 
         if (!recursive) continue;
 
-        var node = this.children[i].getNodeById(id);
+        var node = this.children[i].getChildNodeById(id);
         if (node !== null) { 
             return node;
         }
@@ -70,8 +73,8 @@ ecrit.Node.prototype._emit = function (event, data) {
 /**
  * Inserts the node at the specified position.
  * @param {Node} node - The node to insert
- * @param {string} afterId - The ID of the node to insert after
  * @param {string} beforeId - The ID of the node to insert before
+ * @param {string} afterId - The ID of the node to insert after
  */
 ecrit.Node.prototype.insertNode = function (node, afterId, beforeId) {
     function emitIt() {
@@ -79,9 +82,8 @@ ecrit.Node.prototype.insertNode = function (node, afterId, beforeId) {
     };
     
     if (typeof afterId === "string") {
-        var insertAfter = this.getNodeById(afterId, false);
-        if (insertAfter !== null) {
-            var insertAt = this.children.indexOf(insertAfter) + 1;
+        var insertAt = this.children.indexOf(this.getChildNodeById(afterId)) + 1;
+        if (insertAt !== -1) {
             this.children.splice(insertAt, 0, node);
         }
         emitIt.call(this);
@@ -89,9 +91,8 @@ ecrit.Node.prototype.insertNode = function (node, afterId, beforeId) {
     }
 
     if (typeof beforeId === "string") {
-        var insertBefore = this.getNodeById(beforeId, false);
-        if (insertBefore !== null) {
-            var insertAt = this.children.indexOf(insertBefore);
+        var insertAt = this.children.indexOf(this.getChildNodeById(beforeId));
+        if (insertAt !== -1) {
             this.children.splice(insertAt, 0, node);
         }
         emitIt.call(this);
@@ -103,14 +104,15 @@ ecrit.Node.prototype.insertNode = function (node, afterId, beforeId) {
 };
 
 /**
- * Removes the node from its parent.
+ * Removes the specified child node.
+ * @param {Node} node - The node to remove
  */
-ecrit.Node.prototype.remove = function () {
-    if (this.parent === this) return;
+ecrit.Node.prototype.removeNode = function (node) {
+    var foundNode = this.getChildNodebyId(node.id, false);
+    if (foundNode === null || foundNode === this) return;
 
-    var index = this.parent.children.indexOf(this);
-    this.parent.children.splice(index, 1);
+    var index = this.children.indexOf(foundNode);
+    this.children.splice(index, 1);
 
-    this.parent._emit("childRemoved", this);
-    this._emit("removed");
+    this._emit("childRemoved", foundNode);
 };

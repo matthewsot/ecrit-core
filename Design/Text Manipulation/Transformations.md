@@ -44,7 +44,7 @@ Note that fromIndex denotes the index of the first character removed and toIndex
 }
 ```
 
-## insertNode
+## insertChild
 The insertNode action inserts the node provided by the node property. The "afterId" property always takes precedence over the "beforeId" property, and if neither is provided the node is inserted at the end of its parent's node collection.
 
 ```
@@ -60,8 +60,8 @@ The insertNode action inserts the node provided by the node property. The "after
 }
 ```
 
-## removeNode
-The removeNode action removes the specified node from its parent.
+## removeChild
+The removeNode action removes the specified node from its parent. Note that 
 
 ```
 {
