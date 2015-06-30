@@ -12,20 +12,6 @@ ecrit.Document = function () {
 ecrit.Document.prototype = Object.create(ecrit.Node.prototype);
 ecrit.Document.prototype.constructor = ecrit.Document;
 
-ecrit.Document.prototype._detectConflicts = function (transformation) {
-    var conflicts = [];
-
-    for (var i = 0; i < this.history.length; i++) {
-        var compare = this.history[i];
-
-        if (compare.timestamp > transformation.timestamp && compare.affectsId === transformation.affectsId) {
-            conflicts.push(compare);
-        }
-    }
-    
-    return conflicts;
-};
-
 ecrit.Document.prototype._applyTransformation = function (transformation) {
     switch (transformation.action) {
         case "insertNode":
