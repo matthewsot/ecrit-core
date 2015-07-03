@@ -41,6 +41,14 @@ gulp.task('test', function () {
     
     assert(doc.children.length === 1, "Doc child length");
     assert(doc.getChildNodeById("p-id-1") === para, "getChildNodeById");
+    
+    doc.getChildNodeById("p-id-1").applyTransformation({
+        "affectsId": "p-id-1",
+        "timestamp": (new Date()).getTime(),
+        "action": "insertNode",
+        "node": new sandbox.ecrit.TextSpan(para, "ts-id-1"),
+        "lastApplied": -1
+    });
 });
 
 gulp.task('simple-test', function () {

@@ -1,7 +1,8 @@
-ecrit.TextSpan = function (id, options) {
-    this.id = id;
+ecrit.TextSpan = function (parent, id, options) {
     this.text = options.text || "";
     this.formatting = options.formatting || [];
+    
+    ecrit.Node.call(this, parent, id);
 };
 
 ecrit.TextSpan.prototype = Object.create(ecrit.Node.prototype);
