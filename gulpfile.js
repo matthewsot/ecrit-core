@@ -12,7 +12,10 @@ gulp.task('text', function () {
 });
 
 gulp.task('presentation-jsx', function () {
-    return gulp.src("./src/presentation/**/*.jsx").pipe(react()).pipe(gulp.dest('./temp/presentation/'));
+    return gulp.src("./src/presentation/**/*.jsx")
+        .pipe(react())
+        .pipe(concat("pres-con.js"))
+        .pipe(gulp.dest('./temp/presentation/'));
 });
 
 gulp.task('presentation', function () {

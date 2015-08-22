@@ -4,10 +4,12 @@
         <title>Ecrit Demo</title>
         <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/react/0.13.3/react.min.js"></script>
         <script type="text/javascript" src="../../dist/text.js"></script>
+        <script type="text/javascript" src="../../dist/presentation.js"></script>
     </head>
     <body>
+        <div id="ecrit-mount"></div>
         <script>
-            
+            React.render(React.createElement(Voir, null), document.getElementById("ecrit-mount"));
         </script>
     </body>
 </html>

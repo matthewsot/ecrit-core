@@ -1,4 +1,3 @@
-var ecrit = ecrit || {};
 var Voir = React.createClass({displayName: "Voir",
   render: function() {
     return (
