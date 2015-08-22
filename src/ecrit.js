@@ -1,1 +1,1 @@
-var ecrit = {};
+var ecrit = ecrit || {};

@@ -1,14 +1,30 @@
 var gulp = require("gulp");
+var react = require('gulp-react');
 var concat = require("gulp-concat");
 
 var vm = require("vm");
 var fs = require("fs");
 
-gulp.task('default', function () {
-    return gulp.src(["./src/**/*.js" ])
-        .pipe(concat('ecrit.js'))
+gulp.task('text', function () {
+    return gulp.src(["./src/ecrit.js", "./src/text/**/*.js" ])
+        .pipe(concat('text.js'))
         .pipe(gulp.dest('./dist/'));
 });
+
+gulp.task('presentation-jsx', function () {
+    return gulp.src("./src/presentation/**/*.jsx").pipe(react()).pipe(gulp.dest('./temp/presentation/'));
+});
+
+gulp.task('presentation', function () {
+    gulp.start("presentation-jsx");
+
+    return gulp.src(["./src/ecrit.js", "./src/presentation/**/*.js", "./temp/presentation/**/*.js"])
+        .pipe(concat('presentation.js'))
+        .pipe(gulp.dest('./dist/'));
+});
+
+gulp.task('default', ["text", "presentation"]);
+gulp.task('build', ["text", "presentation"]);
 
 function assert(val, err) {
     if (!val) {
