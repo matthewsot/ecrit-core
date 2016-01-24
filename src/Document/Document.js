@@ -6,7 +6,7 @@ ecrit.Document = function () {
     this.document = this;
     this.id = "root";
     
-    ecrit.Node.call(this, this, "root", []);
+    ecrit.Node.call(this, "Document", this, "root", []);
 };
 
 ecrit.Document.prototype = Object.create(ecrit.Node.prototype);

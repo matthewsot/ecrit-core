@@ -39,7 +39,8 @@ ecrit.NodeHistory.prototype.betweenTimestamps = function (afterStamp, beforeStam
     }
     return ret;
 };
-ecrit.Node = function (parent, id, nodes) {
+ecrit.Node = function (type, parent, id, nodes) {
+    this.type = type;
     this.parent = parent;
     this.id = id;
     this.document = parent.document;
@@ -165,7 +166,7 @@ ecrit.Document = function () {
     this.document = this;
     this.id = "root";
     
-    ecrit.Node.call(this, this, "root", []);
+    ecrit.Node.call(this, "Document", this, "root", []);
 };
 
 ecrit.Document.prototype = Object.create(ecrit.Node.prototype);
@@ -240,7 +241,7 @@ ecrit.Document.prototype.applyTransformation = function (transformation, clone) 
 };
 
 ecrit.Paragraph = function (parent, id, nodes) {
-    ecrit.Node.call(this, parent, id, nodes);
+    ecrit.Node.call(this, "Paragraph", parent, id, nodes);
 };
 
 ecrit.Paragraph.prototype = Object.create(ecrit.Node.prototype);
@@ -317,7 +318,7 @@ ecrit.TextSpan = function (parent, id, options) {
     this.text = options.text || "";
     this.formatting = options.formatting || [];
     
-    ecrit.Node.call(this, parent, id);
+    ecrit.Node.call(this, "TextSpan", parent, id);
 };
 
 ecrit.TextSpan.prototype = Object.create(ecrit.Node.prototype);
@@ -329,11 +330,11 @@ ecrit.TextSpan.prototype._applyTransformation = function (transformation) {
             var newStr = this.text.substring(0, transformation.index);
             newStr += this.text.substring((transformation.index + transformation.text.length));
             this.text = newStr;
-            this._emit("modifiedText", transformation);
+            this._emit("textModified", transformation);
             return;
         case "insertText":
             this.text = this.text.slice(0, transformation.index) + transformation.text + this.text.slice(transformation.index);
-            this._emit("modifiedText", transformation);
+            this._emit("textModified", transformation);
             return;
     }
 };

@@ -1,4 +1,5 @@
-ecrit.Node = function (parent, id, nodes) {
+ecrit.Node = function (type, parent, id, nodes) {
+    this.type = type;
     this.parent = parent;
     this.id = id;
     this.document = parent.document;
