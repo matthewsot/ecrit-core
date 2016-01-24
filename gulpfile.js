@@ -90,27 +90,27 @@ gulp.task('simple-test', function () {
     var C = new sandbox.Line("xyz123");
 
     var ATransform = {
-        remove: false,
-        content: "abc",
+        action: "insertText",
+        text: "abc",
         index: 0,
         timestamp: 300,
-        lastApplied: 0
+        lastApplied: -1
     };
 
     var BTransform = {
-        remove: false,
-        content: "hello",
+        action: "insertText",
+        text: "hello",
         index: 6,
         timestamp: 500,
         lastApplied: 100
     };
 
     var CTransform = {
-        remove: false,
-        content: "aaa",
+        action: "insertText",
+        text: "aaa",
         index: 1,
         timestamp: 100,
-        lastApplied: 0
+        lastApplied: -1
     };
 
 // A tests
