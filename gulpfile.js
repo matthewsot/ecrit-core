@@ -56,9 +56,22 @@ gulp.task('test', function () {
         "affectsId": "p-id-1",
         "timestamp": (new Date()).getTime(),
         "action": "insertNode",
-        "node": new sandbox.ecrit.TextSpan(para, "ts-id-1"),
+        "node": new sandbox.ecrit.TextSpan(para, "ts-id-1", { text: "test text" }),
         "lastApplied": -1
     });
+    
+    assert(doc.getChildNodeById("ts-id-1").text === "test text", "TextSpan text");
+
+    doc.getChildNodeById("ts-id-1").applyTransformation(new sandbox.ecrit.Transformation({
+        remove: false,
+        action: "insertText",
+        text: "abc",
+        index: 0,
+        timestamp: 300,
+        lastApplied: -1
+    }));
+
+    assert(doc.getChildNodeById("ts-id-1").text === "abctest text", "TextSpan test text");
 });
 
 gulp.task('simple-test', function () {
@@ -136,7 +149,7 @@ gulp.task('simple-test', function () {
 });
 
 gulp.task('watch', function () {
-	gulp.watch("src/**/*", function(v) {
-		gulp.start('default');
-	});
+    gulp.watch("src/**/*", function(v) {
+        gulp.start('default');
+    });
 });

@@ -1,5 +1,9 @@
-# ecrit - a better text editor
+# ecrit: a better text editor
 High-performance editor with a custom writing surface, a la Google Kix
+
+#ecrit-core: the text & transformation layer
+This repository contains the "backend" Javascript library to handle underlying text storage and manipulation across multiple concurrent users.
+It does not include any code to actually display or interact with that text.
 
 
 ### What?

@@ -30,7 +30,7 @@ ecrit.TextSpan.prototype._undo = function (transformation) {
 
 ecrit.TextSpan.prototype.applyTransformation = function (transformation, clone) {
     if (clone !== false) {
-        transformation = JSON.parse(JSON.stringify(transformation));
+        transformation = new ecrit.Transformation(JSON.parse(JSON.stringify(transformation)));
     }
 
     var reference = this.history.withTimestamp(transformation.lastApplied);
@@ -44,7 +44,7 @@ ecrit.TextSpan.prototype.applyTransformation = function (transformation, clone) 
         this.history.splice(this.history.indexOf(U[i]), 1);
         this._undo(U[i]);
     }
-
+    
     var E = this.history.betweenTimestamps(transformation.lastApplied, transformation.timestamp);
     var D = 0;
     for (var i = 0; i < E.length; i++) {
