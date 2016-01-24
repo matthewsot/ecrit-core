@@ -1,4 +1,44 @@
 var ecrit = ecrit || {};
+ecrit.NodeHistory = function () {
+	this._push = this.push;
+	this.push = function (element) {
+	    this._push(element);
+	    this.sort(function (a, b) {
+	        return a.timestamp - b.timestamp;
+	    });
+	};
+};
+
+ecrit.NodeHistory.prototype = Object.create(Array.prototype);
+
+ecrit.NodeHistory.prototype.withTimestamp = function (stamp) {
+    for (var i = 0; i < this.length; i++) {
+        if (this[i].timestamp === stamp) {
+            return this[i];
+        }
+    }
+    return null;
+};
+
+ecrit.NodeHistory.prototype.afterTimestamp = function (stamp) {
+    var ret = [];
+    for (var i = 0; i < this.length; i++) {
+        if (this[i].timestamp > stamp) {
+            ret.push(this[i]);
+        }
+    }
+    return ret;
+};
+
+ecrit.NodeHistory.prototype.betweenTimestamps = function (afterStamp, beforeStamp) {
+    var ret = [];
+    for (var i = 0; i < this.length; i++) {
+        if (this[i].timestamp > afterStamp && this[i].timestamp < beforeStamp) {
+            ret.push(this[i]);
+        }
+    }
+    return ret;
+};
 ecrit.Node = function (parent, id, nodes) {
     this.parent = parent;
     this.id = id;
@@ -117,46 +157,6 @@ ecrit.Node.prototype.removeNode = function (node) {
 
     this._emit("childRemoved", foundNode);
 };
-ecrit.NodeHistory = function () {
-	this._push = this.push;
-	this.push = function (element) {
-	    this._push(element);
-	    this.sort(function (a, b) {
-	        return a.timestamp - b.timestamp;
-	    });
-	};
-};
-
-ecrit.NodeHistory.prototype = Object.create(Array.prototype);
-
-ecrit.NodeHistory.prototype.withTimestamp = function (stamp) {
-    for (var i = 0; i < this.length; i++) {
-        if (this[i].timestamp === stamp) {
-            return this[i];
-        }
-    }
-    return null;
-};
-
-ecrit.NodeHistory.prototype.afterTimestamp = function (stamp) {
-    var ret = [];
-    for (var i = 0; i < this.length; i++) {
-        if (this[i].timestamp > stamp) {
-            ret.push(this[i]);
-        }
-    }
-    return ret;
-};
-
-ecrit.NodeHistory.prototype.betweenTimestamps = function (afterStamp, beforeStamp) {
-    var ret = [];
-    for (var i = 0; i < this.length; i++) {
-        if (this[i].timestamp > afterStamp && this[i].timestamp < beforeStamp) {
-            ret.push(this[i]);
-        }
-    }
-    return ret;
-};
 /**
  * Represents an ecrit Document.
  * @constructor
@@ -238,52 +238,6 @@ ecrit.Document.prototype.applyTransformation = function (transformation, clone) 
         }
     }
 };
-/**
- * Represents a transformation to a Document.
- * @constructor
- * @param {object} data - The transformation data to apply.
- */
-ecrit.Transformation = function (data) {
-    for (var prop in data) {
-        if (data.hasOwnProperty(prop)) {
-            this[prop] = data[prop];
-        }
-    }
-};
-
-/**
- * Reverses a transformation. The reversed transformation can be applied as an undo transformation.
- * @returns {Transformation} - The reversed transformation
- */
-ecrit.Transformation.prototype.reversed = function () {
-    var reversed = new Transformation(this);
-    
-    switch (this.action) {
-        case "insertText":
-            reversed.action = "removeText";
-            reversed.fromIndex = this.atIndex;
-            reversed.toIndex = this.atIndex + this.contents.length;
-            break;
-        case "removeText":
-            reversed.action = "insertText";
-            reversed.atIndex = this.fromIndex;
-            break;
-
-        case "removeNode":
-            reversed.action = "insertNode";
-            break;
-        case "insertNode":
-            reversed.action = "removeNode";
-            break;
-
-        case "modifyFormat":
-            reversed.add = reversed.remove;
-            reversed.remove = reversed.add;
-            break;
-    }
-
-    return reversed;
-};
 
 ecrit.Paragraph = function (parent, id, nodes) {
     ecrit.Node.call(this, parent, id, nodes);
@@ -359,6 +313,7 @@ ecrit.Paragraph.prototype.applyTransformation = function (transformation, clone)
     }
 };
 ecrit.TextSpan = function (parent, id, options) {
+    options = options || {};
     this.text = options.text || "";
     this.formatting = options.formatting || [];
     
@@ -435,4 +390,50 @@ ecrit.TextSpan.prototype.applyTransformation = function (transformation, clone) 
             i--;
         }
     }
+};
+/**
+ * Represents a transformation to a Document.
+ * @constructor
+ * @param {object} data - The transformation data to apply.
+ */
+ecrit.Transformation = function (data) {
+    for (var prop in data) {
+        if (data.hasOwnProperty(prop)) {
+            this[prop] = data[prop];
+        }
+    }
+};
+
+/**
+ * Reverses a transformation. The reversed transformation can be applied as an undo transformation.
+ * @returns {Transformation} - The reversed transformation
+ */
+ecrit.Transformation.prototype.reversed = function () {
+    var reversed = new Transformation(this);
+    
+    switch (this.action) {
+        case "insertText":
+            reversed.action = "removeText";
+            reversed.fromIndex = this.atIndex;
+            reversed.toIndex = this.atIndex + this.contents.length;
+            break;
+        case "removeText":
+            reversed.action = "insertText";
+            reversed.atIndex = this.fromIndex;
+            break;
+
+        case "removeNode":
+            reversed.action = "insertNode";
+            break;
+        case "insertNode":
+            reversed.action = "removeNode";
+            break;
+
+        case "modifyFormat":
+            reversed.add = reversed.remove;
+            reversed.remove = reversed.add;
+            break;
+    }
+
+    return reversed;
 };

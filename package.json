@@ -4,6 +4,6 @@
   "devDependencies": {
     "gulp": "^3.9.0",
     "gulp-concat": "^2.6.0",
-    "gulp-react": "^3.0.1"
+    "gulp-order": "^1.1.0"
   }
 }

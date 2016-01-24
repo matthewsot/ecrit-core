@@ -1,4 +1,5 @@
 ecrit.TextSpan = function (parent, id, options) {
+    options = options || {};
     this.text = options.text || "";
     this.formatting = options.formatting || [];
     

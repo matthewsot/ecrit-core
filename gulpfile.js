@@ -1,49 +1,40 @@
 var gulp = require("gulp");
-var react = require('gulp-react');
+var order = require("gulp-order");
 var concat = require("gulp-concat");
 
 var vm = require("vm");
 var fs = require("fs");
 
 gulp.task('text', function () {
-    return gulp.src(["./src/ecrit.js", "./src/text/**/*.js" ])
-        .pipe(concat('text.js'))
-        .pipe(gulp.dest('./dist/'));
+    return gulp.src("src/**/*.js")
+        .pipe(order([
+            "ecrit.js",
+            "NodeHistory.js",
+            "Node.js",
+            "**/*.js"
+        ]))
+        .pipe(concat('core.js'))
+        .pipe(gulp.dest('dist/'));
 });
 
-gulp.task('presentation-jsx', function () {
-    return gulp.src("./src/presentation/**/*.jsx")
-        .pipe(react())
-        .pipe(concat("pres-con.js"))
-        .pipe(gulp.dest('./temp/presentation/'));
-});
-
-gulp.task('presentation', function () {
-    gulp.start("presentation-jsx");
-
-    return gulp.src(["./src/ecrit.js", "./src/presentation/**/*.js", "./temp/presentation/**/*.js"])
-        .pipe(concat('presentation.js'))
-        .pipe(gulp.dest('./dist/'));
-});
-
-gulp.task('default', ["text", "presentation"]);
-gulp.task('build', ["text", "presentation"]);
+gulp.task('default', [ "text" ]);
+gulp.task('build', [ "text" ]);
 
 function assert(val, err) {
     if (!val) {
         console.log("FAILED: " + err);
         return;
     }
-    //console.log("Passed: " + err);
+    console.log("Passed: " + err);
 }
 
 gulp.task('test', function () {
     gulp.start("default");
-    var code = fs.readFileSync("./dist/ecrit.js", 'utf-8');
+    var code = fs.readFileSync("./dist/core.js", 'utf-8');
 
     var sandbox = { console: console };
     vm.runInNewContext(code, sandbox);
-        
+    
     var doc = new sandbox.ecrit.Document();
     assert(doc.id === "root", "Doc ID check");
     assert(doc.getChildNodeById("root").id === "root", "getChildNodeById");
@@ -71,11 +62,13 @@ gulp.task('test', function () {
 });
 
 gulp.task('simple-test', function () {
-    var code = fs.readFileSync("./Line/line.js", 'utf-8');
+    var coreCode = fs.readFileSync("./dist/core.js", 'utf-8');
+    var lineCode = fs.readFileSync("./Line/line.js", 'utf-8');
 
     var sandbox = {};
     sandbox.console = console;
-    vm.runInNewContext(code, sandbox);
+    vm.runInNewContext(coreCode, sandbox);
+    vm.runInNewContext(lineCode, sandbox);
 
     // A test of the "3-Person Collisions" example from Design\Text Manipulation\Collisions.md with timestamps x100
 
@@ -143,7 +136,7 @@ gulp.task('simple-test', function () {
 });
 
 gulp.task('watch', function () {
-	gulp.watch("./src/**/*", function(v) {
+	gulp.watch("src/**/*", function(v) {
 		gulp.start('default');
 	});
 });
