@@ -109,7 +109,7 @@ ecrit.Node.prototype.insertNode = function (node, afterId, beforeId) {
  * @param {Node} node - The node to remove
  */
 ecrit.Node.prototype.removeNode = function (node) {
-    var foundNode = this.getChildNodebyId(node.id, false);
+    var foundNode = this.getChildNodeById(node.id);
     if (foundNode === null || foundNode === this) return;
 
     var index = this.children.indexOf(foundNode);

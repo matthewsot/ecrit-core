@@ -15,13 +15,12 @@ ecrit.TextSpan.prototype._applyTransformation = function (transformation) {
             var newStr = this.text.substring(0, transformation.index);
             newStr += this.text.substring((transformation.index + transformation.text.length));
             this.text = newStr;
-            this._emit("textModified", transformation);
-            return;
+            break;
         case "insertText":
             this.text = this.text.slice(0, transformation.index) + transformation.text + this.text.slice(transformation.index);
-            this._emit("textModified", transformation);
-            return;
+            break;
     }
+    this._emit("textModified", { node: this, transformation: transformation });
 };
 
 ecrit.TextSpan.prototype._undo = function (transformation) {

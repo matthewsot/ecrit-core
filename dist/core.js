@@ -150,7 +150,7 @@ ecrit.Node.prototype.insertNode = function (node, afterId, beforeId) {
  * @param {Node} node - The node to remove
  */
 ecrit.Node.prototype.removeNode = function (node) {
-    var foundNode = this.getChildNodebyId(node.id, false);
+    var foundNode = this.getChildNodeById(node.id);
     if (foundNode === null || foundNode === this) return;
 
     var index = this.children.indexOf(foundNode);
@@ -330,13 +330,12 @@ ecrit.TextSpan.prototype._applyTransformation = function (transformation) {
             var newStr = this.text.substring(0, transformation.index);
             newStr += this.text.substring((transformation.index + transformation.text.length));
             this.text = newStr;
-            this._emit("textModified", transformation);
-            return;
+            break;
         case "insertText":
             this.text = this.text.slice(0, transformation.index) + transformation.text + this.text.slice(transformation.index);
-            this._emit("textModified", transformation);
-            return;
+            break;
     }
+    this._emit("textModified", { node: this, transformation: transformation });
 };
 
 ecrit.TextSpan.prototype._undo = function (transformation) {
