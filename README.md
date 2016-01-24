@@ -5,7 +5,50 @@ High-performance editor with a custom writing surface, a la Google Kix
 This repository contains the "backend" Javascript library to handle underlying text storage and manipulation across multiple concurrent users.
 It does not include any code to actually display or interact with that text.
 
+#using it
+See gulpfile.js for some demo tests. In general, it'll look something like this:
+```
+var doc = new ecrit.Document();
+var para = new ecrit.Paragraph(doc, "p-id-1");
 
+doc.applyTransformation({
+    "affectsId": "root",
+    "timestamp": 100,
+    "action": "insertNode",
+    "node": para,
+    "lastApplied": -1
+});
+
+var textSpan = new ecrit.TextSpan(para, "ts-id-1", { text: "test text" });
+
+doc.getChildNodeById("p-id-1").applyTransformation({
+    "affectsId": "p-id-1",
+    "timestamp": 200,
+    "action": "insertNode",
+    "node": textSpan,
+    "lastApplied": -1
+});
+
+doc.getChildNodeById("ts-id-1").applyTransformation(new ecrit.Transformation({
+    action: "insertText",
+    text: "abc ",
+    index: 0,
+    timestamp: 300,
+    lastApplied: -1
+}));
+
+doc.getChildNodeById("ts-id-1").applyTransformation(new ecrit.Transformation({
+    action: "insertText",
+    text: "hello there! ",
+    index: 4,
+    timestamp: 500,
+    lastApplied: 300
+}));
+```
+
+Documents contain Paragraphs which contain TextSpans, and modifications/additions/removals are handled through ``applyTransformation`` methods on any node.
+
+#ecrit q&a
 ### What?
 Ecrit will be a Javascript editor that doesn't use any native HTML editing surfaces, like textarea or input. You will be able to turn any div into an editor, and it will use some form of operational transformation to keep everything in check.
 
