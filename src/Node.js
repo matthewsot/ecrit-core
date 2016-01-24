@@ -114,5 +114,5 @@ ecrit.Node.prototype.removeNode = function (node) {
     var index = this.children.indexOf(foundNode);
     this.children.splice(index, 1);
 
-    this._emit("childRemoved", foundNode);
+    this._emit("nodeRemoved", foundNode);
 };
